@@ -9,37 +9,41 @@ import pandas as pd
 CAPEX_BUDGET = 250000  # Budget in Euros (€)
 
 # Target annual energy demand for the system. This is used to scale the consumption profile.
-ANNUAL_ENERGY_DEMAND = 250  # MWh/year
-# Castanheira de Pera's annual energy demand is around 870 MWh.
+ANNUAL_ENERGY_DEMAND = 500  # MWh/year
+# Castanheira de Pera's annual energy demand is around 8700 MWh.
 
 # --- Solar Power Configuration ---
-CAPEX_SOLAR = 500 * 1e3      # Investment cost per MWp (€/MWp)
-LIFE_SOLAR = 25              # Economic lifetime in years
-capital_cost_solar = CAPEX_SOLAR / LIFE_SOLAR  # Annualized capital cost (€/MWp/year)
+CAPEX_SOLAR_MW = 1100 * 1e3      # Investment cost per MWp (€/MWp) | Source: 1100 €/kW
+LIFE_SOLAR = 30               # Economic lifetime in years
+OPEX_SOLAR_MW_YEAR = 8 * 1e3          # Annual operational cost in euros/MW/year | Source: 8 €/kW/an
+#
+capital_cost_solar = CAPEX_SOLAR_MW / LIFE_SOLAR + OPEX_SOLAR_MW_YEAR  # Annualized capital cost (€/MWp/year)
 
 # --- Wind Power Configuration ---
-CAPEX_WIND = 1100 * 1e3      # Investment cost per MWp (€/MWp)
-LIFE_WIND = 20               # Economic lifetime in years
-capital_cost_wind = CAPEX_WIND / LIFE_WIND  # Annualized capital cost (€/MWp/year)
-
-# --- Biomass ORC (Organic Rankine Cycle) Configuration ---
-CAPEX_ORC_BIOMASS = 400000 / 50 * 1e3  # investment cost per MW (€/MW)
-salary_get_waste = 22000              # Annual salary for fuel collection and treatment (€/year)
-LIFE_ORC_Biomass = 20                 # Economic lifetime in years
-# produce 4 time more heat than electricity...
-
-# Annualized cost includes both capital cost and operational (salary) costs.
-capital_cost_ORC_Biomass = (CAPEX_ORC_BIOMASS / LIFE_ORC_Biomass) + salary_get_waste
+CAPEX_WIND_MW = 1300 * 1e3       # Investment cost per MWp (€/MWp) | Source: 1300 €/kW
+LIFE_WIND = 25                # Economic lifetime in years
+OPEX_WIND_MW_YEAR = 34 * 1e3          # Annual operational cost in euros/MW/year | Source: 34 €/kW/an
+#
+capital_cost_wind = CAPEX_WIND_MW / LIFE_WIND + OPEX_WIND_MW_YEAR # Annualized capital cost (€/MWp/year)
 
 # --- Hydro Reservoir Configuration ---
 # This section defines a pre-existing, fixed-capacity hydro plant.
-IS_HYDRO_FIXED = True            # If True, the hydro plant's capacity is not optimized.
-Cout_turbine_30kw = 120000       # Total cost of the existing 30 kW turbine (€)
-INSTALLED_POWER_HYDRO = 30 / 1000 # Installed power capacity in MW
-CAPEX_HYDRO = Cout_turbine_30kw / INSTALLED_POWER_HYDRO  # Effective investment cost per MWp (€/MWp)
-LIFE_HYDRO = 40                  # Economic lifetime in years
-RESERVOIR_CAPACITY_HYDRO = 5     # Reservoir storage capacity in hours of full power operation
-capital_cost_hydro = CAPEX_HYDRO / LIFE_HYDRO  # Annualized capital cost (€/MW/year)
+IS_HYDRO_FIXED = True             # If True, the hydro plant's capacity is not optimized.
+CAPEX_HYDRO_MW = 3800 * 1e3       # Investment cost per MWp (€/MWp) | Source: 3800 €/kW
+LIFE_HYDRO = 50                   # Economic lifetime in years
+OPEX_HYDRO_MW_YEAR = 70 * 1e3             # Annual operational cost in euros/MW/year | Source: 70 €/kW/an
+RESERVOIR_CAPACITY_HYDRO = 5      # Reservoir storage capacity in hours of full power operation
+#
+capital_cost_hydro = CAPEX_HYDRO_MW / LIFE_HYDRO + OPEX_HYDRO_MW_YEAR # Annualized capital cost (€/MW/year)
+
+# --- Biomass ORC (Organic Rankine Cycle) Configuration ---
+CAPEX_BIOMASS_MW = 18000 * 1e3 # investment cost per MW (€/MW) | Source: 18000 €/kW
+OPEX_BIOMASS_MW_YEAR = 600 * 1e3        # Annual operational cost in euros/MW/year | Source: 600 €/kW/an
+LIFE_ORC_Biomass = 25           # Economic lifetime in years
+# produce 4 time more heat than electricity...
+# Annualized cost includes both capital cost and operational (salary) costs.
+capital_cost_ORC_Biomass = (CAPEX_BIOMASS_MW / LIFE_ORC_Biomass) + OPEX_BIOMASS_MW_YEAR
+
 
 # --- Electric Car (V2G - Vehicle-to-Grid) Configuration ---
 # Assumes electric cars can act as battery storage to help balance the grid.
@@ -54,117 +58,179 @@ battery_capacity_electric_car_hours = (number_of_chargers * mean_electric_car_ca
 
 # --- Grid Interaction Configuration ---
 # Sets the maximum power that can be sold back to the grid.
-GRID_INJECTION_LIMIT = 0.7       # As a percentage (%) of the system's maximum demand
+GRID_INJECTION_LIMIT = 1.0       # As a percentage (%) of the system's maximum demand
 
 # =============================================================================
 # --- Function to Summarize Optimization Results ---
 # =============================================================================
-def sim_recap(n):
-    """
-    Prints a detailed summary of the optimized energy system, including costs,
-    capacities, and energy production for each technology.
-    """
-    print("\n" + "=" * 60)
-    print("      OPTIMAL SYNTHESIS OF THE ENERGY SYSTEM")
-    print("=" * 60)
-    print("\nAnalysis of production and storage technologies:\n")
+def print_parameters_summary():
+    # --- Structuring data for display ---
+    technologies = [
+        {
+            "Name": "Solar PV",
+            "CAPEX (€/kW)": CAPEX_SOLAR_MW / 1000,
+            "OPEX (€/kW/year)": OPEX_SOLAR_MW_YEAR / 1000,
+            "Lifetime (years)": LIFE_SOLAR,
+            "Notes": ""
+        },
+        {
+            "Name": "Small Wind",
+            "CAPEX (€/kW)": CAPEX_WIND_MW / 1000,
+            "OPEX (€/kW/year)": OPEX_WIND_MW_YEAR / 1000,
+            "Lifetime (years)": LIFE_WIND,
+            "Notes": ""
+        },
+        {
+            "Name": "Biomass ORC",
+            "CAPEX (€/kW)": CAPEX_BIOMASS_MW / 1000,
+            "OPEX (€/kW/year)": OPEX_BIOMASS_MW_YEAR / 1000,
+            "Lifetime (years)": LIFE_ORC_Biomass,
+            "Notes": ""
+        },
+        {
+            "Name": "Micro-Hydro",
+            "CAPEX (€/kW)": CAPEX_HYDRO_MW / 1000,
+            "OPEX (€/kW/year)": OPEX_HYDRO_MW_YEAR / 1000,
+            "Lifetime (years)": LIFE_HYDRO,
+            "Notes": f"Reservoir: {RESERVOIR_CAPACITY_HYDRO}h | Fixed: {IS_HYDRO_FIXED}"
+        }
+    ]
 
-    # -- Solar Results --
-    # Retrieve optimized values, using .get() to avoid errors if the asset is not in the model.
+    # --- Displaying the parameters ---
+    print("\n" + "=" * 75)
+    print("           Verification of All Simulation Parameters")
+    print("=" * 75)
+
+    print("\n--- General System & Grid Configuration ---")
+    print(f"{'Total CAPEX Budget:':<35} {CAPEX_BUDGET:,.0f} €")
+    print(f"{'Target Annual Energy Demand:':<35} {ANNUAL_ENERGY_DEMAND} MWh/year")
+    print(f"{'Grid Injection Limit:':<35} {GRID_INJECTION_LIMIT:.0%}")
+
+    print("\n--- V2G (Vehicle-to-Grid) Configuration ---")
+    print(f"{'Number of Chargers:':<35} {number_of_chargers}")
+    print(f"{'Max Power per Charger:':<35} {max_power_per_charger * 1000:.1f} kW")
+    print(f"{'Total V2G Power:':<35} {power_electric_car * 1000:.2f} kW")
+    print(f"{'Total V2G Capacity:':<35} {mean_electric_car_capacity * number_of_chargers * 1000:.2f} kWh")
+
+    print("\n--- Technology Specific Parameters ---")
+    header = f"{'Technology':<15} | {'CAPEX (€/kW)':<15} | {'OPEX (€/kW/year)':<18} | {'Lifetime (years)':<18} | {'Notes'}"
+    separator = "-" * len(header)
+    print(header)
+    print(separator)
+
+    for tech in technologies:
+        row = (
+            f"{tech['Name']:<15} | "
+            f"{int(tech['CAPEX (€/kW)']):<15,} | "
+            f"{int(tech['OPEX (€/kW/year)']):<18,} | "
+            f"{str(tech['Lifetime (years)']):<18} | "
+            f"{tech['Notes']}"
+        )
+        print(row)
+
+    print(separator)
+    print("\n")
+
+def print_optimisation_result(n):
+    """
+    Prints a detailed yet compact summary of the optimized energy system in tables.
+    Version 3: Details grid purchase and sale costs.
+    """
+    # ... (toute la section d'extraction et de calcul des données reste identique)
+    # Solar
     p_nom_solar = n.generators.p_nom_opt.get('Solar', 0)
     e_prod_solar = n.generators_t.p.get('Solar', pd.Series([0])).sum()
-    capex_total_solar = p_nom_solar * CAPEX_SOLAR / 1e3  # Total investment in k€
-    # Calculate Levelized Cost of Energy (LCOE) for solar.
-    ann_cost_solar = p_nom_solar * n.generators.capital_cost.get('Solar', 0)
-    lcoe_solar = (ann_cost_solar / e_prod_solar / 1e3) if e_prod_solar > 1 else 0
-    print("--- Solar ---")
-    print(f"  {'Installed Power':<28}: {p_nom_solar:>8.2f} MW")
-    print(f"  {'Total Investment':<28}: {capex_total_solar:>8.2f} k€")
-    print(f"  {'Annual Energy Produced':<28}: {e_prod_solar:>8.2f} MWh")
-    print(f"  {'Production Cost (LCOE)':<28}: {lcoe_solar:>8.4f} €/kWh\n")
+    capex_solar = p_nom_solar * CAPEX_SOLAR_MW / 1e3
+    lcoe_solar = (
+                p_nom_solar * n.generators.capital_cost.get('Solar', 0) / e_prod_solar / 1e3) if e_prod_solar > 1 else 0
 
-    # -- Wind Results --
+    # Wind
     p_nom_wind = n.generators.p_nom_opt.get('Wind', 0)
     e_prod_wind = n.generators_t.p.get('Wind', pd.Series([0])).sum()
-    capex_total_wind = p_nom_wind * CAPEX_WIND / 1e3  # Total investment in k€
-    # Calculate LCOE for wind.
-    ann_cost_wind = p_nom_wind * n.generators.capital_cost.get('Wind', 0)
-    lcoe_wind = (ann_cost_wind / e_prod_wind / 1e3) if e_prod_wind > 1 else 0
-    print("--- Wind ---")
-    print(f"  {'Installed Power':<28}: {p_nom_wind:>8.2f} MW")
-    print(f"  {'Total Investment':<28}: {capex_total_wind:>8.2f} k€")
-    print(f"  {'Annual Energy Produced':<28}: {e_prod_wind:>8.2f} MWh")
-    print(f"  {'Production Cost (LCOE)':<28}: {lcoe_wind:>8.4f} €/kWh\n")
+    capex_wind = p_nom_wind * CAPEX_WIND_MW / 1e3
+    lcoe_wind = (p_nom_wind * n.generators.capital_cost.get('Wind', 0) / e_prod_wind / 1e3) if e_prod_wind > 1 else 0
 
-    # -- Biomass ORC Results --
+    # Biomass
     p_nom_biomass = n.generators.p_nom_opt.get('Biomass ORC', 0)
     e_prod_biomass = n.generators_t.p.get('Biomass ORC', pd.Series([0])).sum()
-    capex_total_biomass = p_nom_biomass * CAPEX_ORC_BIOMASS / 1e3  # Total investment in k€
-    # Calculate LCOE for biomass.
-    ann_cost_biomass = p_nom_biomass * n.generators.capital_cost.get('Biomass ORC', 0)
-    lcoe_biomass = (ann_cost_biomass / e_prod_biomass / 1e3) if e_prod_biomass > 1 else 0
-    print("--- Biomass ORC ---")
-    print(f"  {'Installed Power':<28}: {p_nom_biomass:>8.2f} MW")
-    print(f"  {'Total Investment':<28}: {capex_total_biomass:>8.2f} k€")
-    print(f"  {'Annual Energy Produced':<28}: {e_prod_biomass:>8.2f} MWh")
-    print(f"  {'Production Cost (LCOE)':<28}: {lcoe_biomass:>8.4f} €/kWh\n")
+    capex_biomass = p_nom_biomass * CAPEX_BIOMASS_MW / 1e3
+    lcoe_biomass = (p_nom_biomass * n.generators.capital_cost.get('Biomass ORC',
+                                                                  0) / e_prod_biomass / 1e3) if e_prod_biomass > 1 else 0
 
-    # -- Electric Car Battery (V2G) Results --
+    # Electric Car Battery
     car_battery_name = 'Electric Car Battery'
     p_nom_battery = n.storage_units.p_nom_opt.get(car_battery_name, 0)
     e_nom_battery = n.storage_units.max_hours.get(car_battery_name, 0) * p_nom_battery
     e_dispatch_battery = n.storage_units_t.p_dispatch.get(car_battery_name, pd.Series([0])).sum()
-    # Calculate total investment based on optimized power.
-    capex_total_battery = p_nom_battery * n.storage_units.capital_cost.get(car_battery_name, 0) / 1e3
-    # Calculate the Levelized Cost of Storage (LCOS).
-    ann_cost_battery = p_nom_battery * n.storage_units.capital_cost.get(car_battery_name, 0)
-    lcoe_battery = (ann_cost_battery / e_dispatch_battery / 1e3) if e_dispatch_battery > 1 else 0
-    print("--- Electric Car Battery ---")
-    print(f"  {'Installed Power':<32}: {p_nom_battery:>8.2f} MW")
-    print(f"  {'Storage Capacity':<32}: {e_nom_battery:>8.2f} MWh")
-    print(f"  {'Total Investment':<32}: {capex_total_battery:>8.2f} k€")
-    print(f"  {'Annual Energy Dispatched':<32}: {e_dispatch_battery:>8.2f} MWh")
-    print(f"  {'Storage/Dispatch Cost (LCOS)':<32}: {lcoe_battery:>8.4f} €/kWh\n")
+    capex_battery = p_nom_battery * n.storage_units.capital_cost.get(car_battery_name, 0) / 1e3
+    lcos_battery = (p_nom_battery * n.storage_units.capital_cost.get(car_battery_name,
+                                                                     0) / e_dispatch_battery / 1e3) if e_dispatch_battery > 1 else 0
 
-    # -- Hydro Results --
+    # Hydro
     hydro_name = 'Hydro Reservoir'
     p_nom_hydro = n.storage_units.p_nom_opt.get(hydro_name, 0)
     e_nom_hydro = n.storage_units.max_hours.get(hydro_name, 0) * p_nom_hydro
     e_dispatch_hydro = n.storage_units_t.p_dispatch.get(hydro_name, pd.Series([0])).sum()
-    # Calculate total investment based on optimized capacity.
-    capex_total_hydro = p_nom_hydro * CAPEX_HYDRO / 1e3
-    # Calculate the Levelized Cost of Storage (LCOS) for hydro.
-    ann_cost_hydro = p_nom_hydro * n.storage_units.capital_cost.get(hydro_name, 0)
-    lcoe_hydro = (ann_cost_hydro / e_dispatch_hydro / 1e3) if e_dispatch_hydro > 1 else 0
-    print("--- Hydro (Reservoir + Turbine) ---")
-    print(f"  {'Installed Power':<32}: {p_nom_hydro:>8.2f} MW")
-    print(f"  {'Storage Capacity':<32}: {e_nom_hydro:>8.2f} MWh")
-    print(f"  {'Total Investment':<32}: {capex_total_hydro:>8.2f} k€")
-    print(f"  {'Annual Energy Dispatched':<32}: {e_dispatch_hydro:>8.2f} MWh")
-    print(f"  {'Annual Inflow Energy':<32}: {n.storage_units_t.inflow[hydro_name].sum():>8.2f} MWh")
-    print(f"  {'Storage/Dispatch Cost (LCOS)':<32}: {lcoe_hydro:>8.4f} €/kWh\n")
+    inflow_hydro = n.storage_units_t.inflow[hydro_name].sum()
+    capex_hydro = p_nom_hydro * CAPEX_HYDRO_MW / 1e3
+    lcos_hydro = (p_nom_hydro * n.storage_units.capital_cost.get(hydro_name,
+                                                                 0) / e_dispatch_hydro / 1e3) if e_dispatch_hydro > 1 else 0
 
-    # -- Grid Exchange Calculations --
+    # Grid Exchange
     demand_mwh = n.loads_t.p_set['Consumption'].sum()
-    achat_mwh = -n.links_t.p1["Grid Import"].sum()  # Energy purchased from the grid
-    vente_mwh = n.links_t.p0["Grid Export"].sum()  # Energy sold to the grid
+    achat_mwh = -n.links_t.p1["Grid Import"].sum()
+    vente_mwh = n.links_t.p0["Grid Export"].sum()
     cout_achat_k_eur = (-n.links_t.p1['Grid Import'] * n.links_t.marginal_cost['Grid Import']).sum() / 1e3
     revenu_vente_k_eur = (n.links_t.p0['Grid Export'] * n.links_t.marginal_cost['Grid Export']).sum() / 1e3
-    print("--- Grid Purchases ---")
-    print(f"  {'Total Energy Purchased':<28}: {achat_mwh:>8.2f} MWh/year")
-    print(f"  {'Total Purchase Cost':<28}: {cout_achat_k_eur:>8.2f} k€/year\n")
-    print("--- Grid Sales ---")
-    print(f"  {'Total Energy Sold':<28}: {vente_mwh:>8.2f} MWh/year")
-    print(f"  {'Total Sales Revenue':<28}: {-abs(revenu_vente_k_eur):>8.2f} k€/year\n")
 
-    # -- System-Wide Financial Summary --
+    # Financial Summary
     total_cost_k_eur = n.objective / 1e3
-    # Benchmark: Cost if all energy was purchased from the grid without a local system.
-    cout_achat_k_eur_sans_hybride = (n.links_t.marginal_cost['Grid Import'] * n.loads_t.p_set['Consumption']).sum() / 1e3
-    total_investement_k_eur = capex_total_solar + capex_total_wind + capex_total_hydro
-    print("--- Overall System Recap ---")
-    print(f"  {'Benchmark Cost (Grid Only)':<35}: {cout_achat_k_eur_sans_hybride:>8.2f} k€/year")
-    print(f"  {'Total Annualized Cost (Hybrid)':<35}: {total_cost_k_eur:>8.2f} k€/year")
-    print(f"  {'Total Investment (S+W+H)':<35}: {total_investement_k_eur:>8.2f} k€")
-    print(f"  {'Net Grid Cost (Purchase-Sale)':<35}: {abs(cout_achat_k_eur) - abs(revenu_vente_k_eur):>8.2f} k€/year")
-    print(f"  {'Total Annual Consumption':<35}: {demand_mwh:>8.2f} MWh/year\n")
+    benchmark_cost_k_eur = (n.links_t.marginal_cost['Grid Import'] * n.loads_t.p_set['Consumption']).sum() / 1e3
+    total_investment_k_eur = capex_solar + capex_wind + capex_hydro + capex_biomass
+    net_grid_cost_k_eur = abs(cout_achat_k_eur) - abs(revenu_vente_k_eur)
+
+    # --- Printing Section (Version 4) ---
+    print("\n" + "=" * 80)
+    print("                OPTIMAL SYNTHESIS OF THE ENERGY SYSTEM")
+    print("=" * 80)
+
+    # Production Technologies Table
+    print("\n--- Production Technologies ---")
+    print(
+        f"{'Technology':<18} | {'Installed Power':>16} | {'Total Investment':>18} | {'Annual Energy':>15} | {'Cost (LCOE)':>14}")
+    print("-" * 80)
+    print(
+        f"{'Solar':<18} | {p_nom_solar:>12.2f} MW | {capex_solar:>14.2f} k€ | {e_prod_solar:>11.2f} MWh | {lcoe_solar:>9.4f} €/kWh")
+    print(
+        f"{'Wind':<18} | {p_nom_wind:>12.2f} MW | {capex_wind:>14.2f} k€ | {e_prod_wind:>11.2f} MWh | {lcoe_wind:>9.4f} €/kWh")
+    print(
+        f"{'Biomass ORC':<18} | {p_nom_biomass:>12.2f} MW | {capex_biomass:>14.2f} k€ | {e_prod_biomass:>11.2f} MWh | {lcoe_biomass:>9.4f} €/kWh")
+
+    # Storage Technologies Table
+    print("\n--- Storage Technologies ---")
+    print(
+        f"{'Technology':<18} | {'Installed Power':>16} | {'Storage Capacity':>18} | {'Annual Dispatch':>15} | {'Cost (LCOS)':>14}")
+    print("-" * 80)
+    print(
+        f"{'Electric Car':<18} | {p_nom_battery:>12.2f} MW | {e_nom_battery:>14.2f} MWh | {e_dispatch_battery:>11.2f} MWh | {lcos_battery:>9.4f} €/kWh")
+    print(
+        f"{'Hydro':<18} | {p_nom_hydro:>12.2f} MW | {e_nom_hydro:>14.2f} MWh | {e_dispatch_hydro:>11.2f} MWh | {lcos_hydro:>9.4f} €/kWh")
+
+    # System and Grid Summary Table
+    print("\n--- System and Grid Operations ---")
+    print(f"{'Metric':<35} | {'Value'}")
+    print("-" * 55)
+    print(f"{'Total Annual Consumption':<35} | {demand_mwh:>10.2f} MWh/year")
+    print(f"{'Grid Energy Purchased':<35} | {achat_mwh:>10.2f} MWh/year")
+    print(f"{'Total Purchase Cost':<35} | {cout_achat_k_eur:>10.2f} k€/year")
+    print(f"{'Grid Energy Sold':<35} | {vente_mwh:>10.2f} MWh/year")
+    print(f"{'Total Sales Revenue':<35} | {-abs(revenu_vente_k_eur):>10.2f} k€/year")
+    print(f"{'Net Grid Cost (Purchase-Sale)':<35} | {net_grid_cost_k_eur:>10.2f} k€/year")
+
+    # MODIFIED SECTION: Final Financial Summary
+    print("\n--- Global Financial Summary ---")
+    print(f"{'Metric':<35} | {'Value'}")
+    print("-" * 55)
+    print(f"{'Total Investment (S+W+H+B)':<35} | {total_investment_k_eur:>10.2f} k€")
+    print(f"{'Benchmark Cost (Grid Only)':<35} | {benchmark_cost_k_eur:>10.2f} k€/year")
+    print(f"{'Total Annualized Cost (Hybrid)':<35} | {total_cost_k_eur:>10.2f} k€/year\n")
