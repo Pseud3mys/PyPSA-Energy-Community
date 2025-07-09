@@ -18,11 +18,12 @@ auto_factor = ANNUAL_ENERGY_DEMAND / data['consumption_mw'].sum()
 data['consumption_mw'] = auto_factor * data['consumption_mw']
 
 #some debug and Info.
-print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_mw'].sum(),2))
+print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_kwh'].sum()/1000,2))
 print("\nScaled Annual Energy Demand (MWh):", round(data['consumption_mw'].sum(),2))
 print("Scaling factor applied to consumption (%):", round(auto_factor*100, 2))
 print("\n\n")
 
+print_parameters_summary()
 
 # Convert hydro power from kW to MW for pypsa
 data['hydro_inflow_mw'] = data['hydro_power_kw'] / 1000
@@ -66,20 +67,20 @@ n.add("Generator", "Solar",
 # Biomass ORC (capacity to be optimized)
 # produce 4 time more heat than electricity...
 # this model assume we sell the heat as a by-product to take it into account.
-# Assume we sell heat (natural gas price) at 60% the price of the electricity
+# Assume we sell heat (natural gas price) at 55% the price of the electricity
 # Assume also 80% efficiency for the ORC heat system. (heat distribution efficiency)
 # 0.8 * 4 * 0.6 = 1.92
 n.add("Generator", "Biomass ORC",
       bus="Castanheira de Pera",
       p_nom_extendable=True,
       capital_cost=capital_cost_ORC_Biomass,
-      marginal_cost=- 0.8 * 4 * 0.6 * aligned_prices) # Negative cost can represent revenue from by-products like heat
+      marginal_cost=- 0 * 4 * 0.55 * aligned_prices) # Negative cost can represent revenue from by-products like heat
 
 ## ------------------ Storage Units ------------------
 # Hydro Reservoir (modeled as a StorageUnit)
 n.add("StorageUnit", "Hydro Reservoir",
       bus="Castanheira de Pera",
-      p_nom=30 / 1000,                # 30kW fixed power capacity
+      p_nom=30 / 1000,                # 30kW if fixed power capacity
       p_nom_extendable=not IS_HYDRO_FIXED, # Capacity is fixed if IS_HYDRO_FIXED is True
       capital_cost=capital_cost_hydro,
       marginal_cost=0,                # Assumed low operational cost
@@ -95,8 +96,8 @@ n.add("StorageUnit", "Electric Car Battery",
       p_nom_extendable=False,         # Not optimized, considered as existing infrastructure
       capital_cost=0,                 # Assumed to be already installed
       marginal_cost=0,                # Negligible operating cost
-      p_min_pu=-0.5 * power_electric_car, # Can draw up to 50% of max power for charging
-      p_max_pu=power_electric_car,    # Can inject up to 100% of max power
+      #p_min_pu=-0.5 * power_electric_car, # Can draw up to 50% of max power for charging
+      #p_max_pu=power_electric_car,    # Can inject up to 100% of max power
       max_hours=battery_capacity_electric_car_hours) # Storage capacity in hours at p_nom
 
 
@@ -146,20 +147,20 @@ total_capex_lhs = 0
 # 2. Add the investment costs of extendable generators (Solar, Wind, Biomass).
 print("  - Adding variable investment costs (Solar, Wind, Biomass)...")
 gen_p_nom_vars = m.variables['Generator-p_nom']
-total_capex_lhs += gen_p_nom_vars.loc['Wind'] * CAPEX_WIND
-total_capex_lhs += gen_p_nom_vars.loc['Solar'] * CAPEX_SOLAR
-total_capex_lhs += gen_p_nom_vars.loc['Biomass ORC'] * CAPEX_ORC_BIOMASS
+total_capex_lhs += gen_p_nom_vars.loc['Wind'] * CAPEX_WIND_MW
+total_capex_lhs += gen_p_nom_vars.loc['Solar'] * CAPEX_SOLAR_MW
+total_capex_lhs += gen_p_nom_vars.loc['Biomass ORC'] * CAPEX_BIOMASS_MW
 
 # 3. Add the hydro investment cost.
 if not IS_HYDRO_FIXED and 'StorageUnit-p_nom' in m.variables:
     # CASE 1: Hydro capacity is optimized (p_nom_extendable=True).
     su_p_nom_vars = m.variables['StorageUnit-p_nom']
-    variable_hydro_cost = su_p_nom_vars.loc['Hydro Reservoir'] * CAPEX_HYDRO
+    variable_hydro_cost = su_p_nom_vars.loc['Hydro Reservoir'] * CAPEX_HYDRO_MW
     total_capex_lhs += variable_hydro_cost
 else:
     # CASE 2: Hydro capacity is FIXED. Its cost is a constant.
     hydro_capacity_mw = n.storage_units.at['Hydro Reservoir', 'p_nom']
-    fixed_hydro_cost = hydro_capacity_mw * CAPEX_HYDRO
+    fixed_hydro_cost = hydro_capacity_mw * CAPEX_HYDRO_MW
     total_capex_lhs += fixed_hydro_cost
 
 # 4. Add the final global budget constraint to the model.
@@ -183,18 +184,18 @@ else:
 # =============================================================================
     # Display a summary of the optimal system configuration
     print("\n\n")
-    sim_recap(n)
+    print_optimisation_result(n)
     print("\n\n")
 
-    # Visualize energy balance for specific periods
-    print("\nGenerating graphs for typical weeks...")
 
     # Plot for a week in Winter
     start_date_winter = pd.Timestamp('2019-01-01')
-    end_date_winter = pd.Timestamp('2019-01-08')
+    end_date_winter = pd.Timestamp('2019-01-14')
     plot_energy_balance(n, start_date_winter, end_date_winter, plot_market_price=False)
+    plot_storage_operation(n, "Hydro Reservoir", start_date_winter, end_date_winter)
+    plot_storage_operation(n, "Electric Car Battery", start_date_winter, end_date_winter)
 
     # Plot for a week in Summer
     start_date_summer = pd.Timestamp('2019-06-01')
-    end_date_summer = pd.Timestamp('2019-06-08')
+    end_date_summer = pd.Timestamp('2019-06-14')
     plot_energy_balance(n, start_date_summer, end_date_summer, plot_market_price=False)
