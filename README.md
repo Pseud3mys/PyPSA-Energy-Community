@@ -38,8 +38,6 @@ This work was developed as part of an internship related to the European program
 ├── data/
 │   ├── calliope_ready_data.csv      # Hourly time-series data for 2019 (consumption, wind/solar factors)
 │   ├── grid price pt.csv            # Hourly Portuguese grid electricity prices for 2019 (€/MWh)
-│   ├── data Castanheira de Pera - Feuille 1 (1).pdf  # Supporting data about the municipality
-│   └── Brouillon rapport de stage..pdf # Draft internship report with project context (in French)
 └── README.md                        # This file
 
 ```
