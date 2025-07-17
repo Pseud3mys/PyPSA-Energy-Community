@@ -1,0 +1,69 @@
+Annual Energy Demand in Castanheira de Pera (MWh): 8645.31
+
+Scaled Annual Energy Demand (MWh): 200.0
+Scaling factor applied to consumption (%): 2.31
+
+
+
+
+===========================================================================
+           Verification of All Simulation Parameters
+===========================================================================
+
+--- General System & Grid Configuration ---
+Total CAPEX Budget:                 180,000 €
+Target Annual Energy Demand:        200 MWh/year
+Grid Injection Limit:               100%
+
+--- V2G (Vehicle-to-Grid) Configuration ---
+Number of Chargers:                 2
+Max Power per Charger:              22.0 kW
+Total V2G Power:                    44.00 kW
+Total V2G Capacity:                 160.00 kWh
+
+--- Technology Specific Parameters ---
+Technology      | CAPEX (€/kW)    | OPEX (€/kW/year)   | Lifetime (years)   | Notes
+-----------------------------------------------------------------------------------
+Solar PV        | 1,100           | 8                  | 30                 |
+Small Wind      | 1,300           | 34                 | 25                 |
+Biomass ORC     | 18,000          | 600                | 25                 |
+Micro-Hydro     | 3,800           | 70                 | 50                 | Reservoir: 5h | Fixed: True
+-----------------------------------------------------------------------------------
+
+================================================================================
+                OPTIMAL SYNTHESIS OF THE ENERGY SYSTEM
+================================================================================
+
+--- Production Technologies ---
+Technology         |  Installed Power |   Total Investment |   Annual Energy |    Cost (LCOE)
+--------------------------------------------------------------------------------
+Solar              |         0.06 MW |          66.00 k€ |       91.52 MWh |    0.0293 €/kWh
+Wind               |        -0.00 MW |          -0.00 k€ |        0.00 MWh |    0.0000 €/kWh
+Biomass ORC        |        -0.00 MW |          -0.00 k€ |        0.00 MWh |    0.0000 €/kWh
+
+--- Storage Technologies ---
+Technology         |  Installed Power |   Storage Capacity | Annual Dispatch |    Cost (LCOS)
+--------------------------------------------------------------------------------
+Electric Car       |         0.04 MW |           0.16 MWh |       92.14 MWh |    0.0000 €/kWh
+Hydro              |         0.03 MW |           0.15 MWh |       24.45 MWh |    0.1792 €/kWh
+
+--- System and Grid Operations ---
+Metric                              | Value
+-------------------------------------------------------
+Total Annual Consumption            |     200.00 MWh/year
+Grid Energy Purchased               |     128.16 MWh/year
+Total Purchase Cost                 |       5.26 k€/year
+Grid Energy Sold                    |      44.12 MWh/year
+Total Sales Revenue                 |      -2.10 k€/year
+Net Grid Cost (Purchase-Sale)       |       3.16 k€/year
+
+--- Global Financial Summary ---
+Metric                              | Value
+-------------------------------------------------------
+Total Investment (S+W+H+B)          |     180.00 k€
+Benchmark Cost (Grid Only)          |       9.72 k€/year
+Total Annualized Cost (Hybrid)      |       5.84 k€/year
+
+
+remarque cycle de charge V2G: il faut 2 endroit de charge: maison et boulot. On remarque que le système charge lematin avant 9h, décharge vers 12 puis recharge vers 14h. Pour enfin décharger le soir. C'est exactement le cycle boulot maison que les gens font en voiture !
+Le système est contraint pour utiliser 70% de la batterie. Ca laisse toujours 30% chargé.

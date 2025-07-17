@@ -1,0 +1,65 @@
+Annual Energy Demand in Castanheira de Pera (MWh): 8645.31
+
+Scaled Annual Energy Demand (MWh): 80.0
+Scaling factor applied to consumption (%): 0.93
+
+
+
+
+===========================================================================
+           Verification of All Simulation Parameters
+===========================================================================
+
+--- General System & Grid Configuration ---
+Total CAPEX Budget:                 114,000 €
+Target Annual Energy Demand:        80 MWh/year
+Grid Injection Limit:               100%
+
+--- V2G (Vehicle-to-Grid) Configuration ---
+Number of Chargers:                 2
+Max Power per Charger:              22.0 kW
+Total V2G Power:                    44.00 kW
+Total V2G Capacity:                 160.00 kWh
+
+--- Technology Specific Parameters ---
+Technology      | CAPEX (€/kW)    | OPEX (€/kW/year)   | Lifetime (years)   | Notes
+-----------------------------------------------------------------------------------
+Solar PV        | 1,100           | 8                  | 30                 |
+Small Wind      | 1,300           | 34                 | 25                 |
+Biomass ORC     | 18,000          | 600                | 25                 |
+Micro-Hydro     | 3,800           | 70                 | 50                 | Reservoir: 5h | Fixed: True
+-----------------------------------------------------------------------------------
+
+================================================================================
+                OPTIMAL SYNTHESIS OF THE ENERGY SYSTEM
+================================================================================
+
+--- Production Technologies ---
+Technology         |  Installed Power |   Total Investment |   Annual Energy |    Cost (LCOE)
+--------------------------------------------------------------------------------
+Solar              |         0.04 MW |          40.01 k€ |       54.23 MWh |    0.0300 €/kWh
+Wind               |         0.03 MW |          44.63 k€ |       85.31 MWh |    0.0346 €/kWh
+Biomass ORC        |        -0.00 MW |          -0.00 k€ |        0.00 MWh |    0.0000 €/kWh
+
+--- Storage Technologies ---
+Technology         |  Installed Power |   Storage Capacity | Annual Dispatch |    Cost (LCOS)
+--------------------------------------------------------------------------------
+Electric Car       |         0.04 MW |           0.00 MWh |        0.00 MWh |    0.0000 €/kWh
+Hydro              |         0.00 MW |           0.00 MWh |        0.00 MWh |    0.0000 €/kWh
+
+--- System and Grid Operations ---
+Metric                              | Value
+-------------------------------------------------------
+Total Annual Consumption            |      80.00 MWh/year
+Grid Energy Purchased               |       7.53 MWh/year
+Total Purchase Cost                 |       0.40 k€/year
+Grid Energy Sold                    |      67.07 MWh/year
+Total Sales Revenue                 |      -2.78 k€/year
+Net Grid Cost (Purchase-Sale)       |      -2.38 k€/year
+
+--- Global Financial Summary ---
+Metric                              | Value
+-------------------------------------------------------
+Total Investment (S+W+H+B)          |      84.64 k€
+Benchmark Cost (Grid Only)          |       3.89 k€/year
+Total Annualized Cost (Hybrid)      |       2.20 k€/year
