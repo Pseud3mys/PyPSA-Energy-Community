@@ -35,6 +35,9 @@ The simulation relies on the following time-series data:
 
 > **Note on Adaptability:** This set of data files is the only part of the model that needs to be modified to simulate a new community, making it highly transposable.
 
+
+![image](./images/output_verification_plot.png)
+
 ----------
 
 ## Simulation Scenarios & Results
@@ -43,12 +46,14 @@ We ran several scenarios to explore the model's behavior under different conditi
 
 ### Scenario 1: Investment Budget Impact
 
--   **Goal**: Show how the optimal energy mix changes with the available initial capital.
+-   **Goal**: Show how the optimal energy mix changes with the available initial capital. At a given annual demand (200MWh).
     
 -   **Simulations**: The model is run with budgets of €180k, €250k, and €348k. To find the optimal budget for a given demand just put 1e9 i the budget (here €348k is the optimal budget).
-    
--   **Finding**: A larger budget favors massive investment in solar and wind, reducing long-term costs and potentially generating net revenue.
-    
+
+180k budget:
+![image](./images/S1_180k_no_storage.png)
+optimal budget (foudn by model) is 348k:
+![image](./images/S1_optimal_budget.png "optimal budget for 200MWh")
 
 ### Scenario 2: Energy Demand Impact
 
