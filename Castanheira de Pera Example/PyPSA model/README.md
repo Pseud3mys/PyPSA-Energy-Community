@@ -66,6 +66,8 @@ We ran several scenarios to explore the model's behavior under different conditi
 -   **Simulations**: Enable/disable pumped hydro (`PUMPING_HYDRO`) and V2G integration in the model.
     
 -   **Finding**: Storage is a key enabler for flexibility. It allows the system to store intermittent renewable energy and dispatch it when most valuable, drastically improving profitability.
+
+![image](./images/S3_V2G_and_pumping.png)
     
 
 _Pumped hydro stores energy by pumping water (charge, blue) when energy is cheap and releases it by turbining (discharge, red) during peak demand._
@@ -128,5 +130,5 @@ This project is structured for easy reuse. The core logic is in `optimiser_main.
 4.  **Analyze Results**: The script will print a detailed summary of the optimal system and generate plots of the energy balance and storage operation.
 
 Exemple of the print output:
-![](./images/print_out_P1.png)
-![](./images/print_out_P2.png)
+![image](./images/print_out_example_P1.png)
+![image](./images/print_out_example_P2.png)
