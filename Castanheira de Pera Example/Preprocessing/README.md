@@ -48,7 +48,7 @@ The final output, `model_timeseries.csv`, will be generated and must be moved in
 
 This is the one and only file that the main optimization model (`optimiser_main.py`) will use. It must contain a complete hourly time-series for one year (8760 hours).
 
-![image](data structure.png "Title")
+![image](./images/data_structure.png "formated data strucutre")
 
 **Note**: The column name for hydropower has been standardized to `hydro_inflow_kwh` to reflect that it represents an **incoming energy resource** (the energy contained in the hourly water volume), not a final power output.
 
@@ -97,6 +97,8 @@ python Preprocessing/scripts/combine_inputs.py
 python Preprocessing/scripts/plot_final_data.py
 
 ```
+
+![image](./images/output_verification_plot.png "plot data to verify")
 
 At the end of this process, the `model_timeseries.csv` file is ready to be used by the main model.
 
