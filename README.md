@@ -1,109 +1,153 @@
 
-# Hybrid Renewable Energy System Optimization for Castanheira de Pera
+# Simplified PyPSA Energy System Optimization Model
+
+Welcome! This repository provides a straightforward and accessible framework for designing and analyzing local hybrid energy systems. Built on the powerful **PyPSA (Python for Power System Analysis)** library, this model is intended as a simple entry point for students, researchers, and communities to size energy sources and understand how system design evolves with different constraints.
+
+The goal is to lower the barrier to entry for energy system modeling, allowing you to get meaningful results without a steep learning curve.
+
+----------
 
 ## Project Overview
 
 This project presents a comprehensive modeling and optimization of a hybrid renewable energy system for the community of **Castanheira de Pera, Portugal**. The primary objective is to determine the optimal mix of renewable energy sources—specifically **Solar PV** and **Wind Power**—to complement a pre-existing 30kW hydroelectric turbine. The model aims to meet the local energy demand while minimizing the total cost of the system, considering both capital expenditures (CAPEX) and operational costs.
 
-The optimization is performed using the open-source Python library **[PyPSA](https://github.com/PyPSA/PyPSA) (Python for Power System Analysis)**. This tool allows for a detailed, time-series-based simulation of the energy system over a full year (2019) with an hourly resolution. The model also explores the potential of integrating a **Biomass Organic Rankine Cycle (ORC) plant** and leveraging **Vehicle-to-Grid (V2G)** technology from local electric vehicles as a form of battery storage.
+The optimization is performed using the open-source Python library **[PyPSA](https://github.com/PyPSA/PyPSA)**. This tool allows for a detailed, time-series-based simulation of the energy system over a full year (2019) with an hourly resolution. The model also explores the potential of integrating a **Biomass Organic Rankine Cycle (ORC) plant** and leveraging **Vehicle-to-Grid (V2G)** technology from local electric vehicles as a form of battery storage.
 
-This work was developed as part of an internship related to the European program [HY4RES](https://hy4res.eu/fr/ "null").
+This work was developed as part of an internship related to the European program [HY4RES](https://hy4res.eu/fr/).
 
-## Key Features
+----------
 
--   **Multi-Technology Optimization**: Determines the optimal installed capacity for Solar PV, Wind, and Biomass ORC generators.
+## Core Features
+
+-   **Easy Configuration**: Most system assumptions, like costs and budgets, are centralized in a single, easy-to-edit parameter file (`utils/model_param.py`).
     
--   **Techno-Economic Analysis**: The optimization is based on minimizing the total annualized cost of the system, taking into account the capital costs, lifetimes, and operational costs of each technology.
+-   **Modular Design**: The model supports a mix of technologies, including solar, wind, biomass, hydro, grid connections, and storage.
     
--   **Time-Series Simulation**: Utilizes hourly data for a full year (2019) for electricity demand, solar and wind availability, and grid prices, ensuring a realistic assessment.
+-   **Storage & Flexibility**: Natively models advanced storage options like pumped-hydro and Vehicle-to-Grid (V2G) to analyze system flexibility.
     
--   **Hydro and V2G Storage Modeling**: Includes a detailed model for a hydro reservoir with a fixed 30kW turbine and models local electric vehicles as a distributed battery storage system.
+-   **Economic Optimization**: The core objective is to find the technology mix that minimizes the total annualized cost of energy for the community.
     
--   **Grid Interaction**: The system can both purchase electricity from and sell surplus energy back to the Portuguese national grid, with defined limits on grid injection.
+-   **Built-in Visualization**: Automatically generates plots of the energy balance and storage operation to help you interpret the results.
     
--   **Data-Driven Approach**: The model is built upon real-world data for energy consumption in Castanheira de Pera, renewable potentials from Renewables.ninja, and Portuguese grid prices.
-    
--   **Comprehensive Results & Visualization**: The main script outputs a detailed summary of the optimized system, including costs, capacities, and energy production, along with a suite of plots for in-depth analysis.
-    
+
+----------
 
 ## Repository Structure
 
+The project is organized to separate the core model from specific case studies. The main optimization scripts are located within a dedicated folder for each case study, making the repository clean and scalable.
+
 ```
 .
+│
 ├── optimiser main.py                # Main script to run the PyPSA optimization
 ├── utils/
 │   ├── data_loader.py               # Module for loading and preparing data
 │   ├── model_param.py               # Module containing all system parameters and costs
 │   └── model_ploting.py             # Module for generating plots and visualizations
 ├── data/
-│   ├── calliope_ready_data.csv      # Hourly time-series data for 2019 (consumption, wind/solar factors)
-│   ├── grid price pt.csv            # Hourly Portuguese grid electricity prices for 2019 (€/MWh)
-└── README.md                        # This file
+│   ├── model_timeseries.csv      # Hourly time-series data for one year (consumption, wind/solar factors, grid price)
+│
+├── Case Study - Castanheira de Pera/
+│   ├── optimiser_main.py
+│   ├── Preprocessing/              # Scripts for automatic data preparation (renewable.ninja, portugese e-redes..)
+│   	└── README.md                   # README to explain data preparation
+│   ├── utils/
+│   ├── data/
+│   └── README.md                   # README specific to this case study
+│
+└── README.md                       # This general repository README
 
 ```
 
-## Installation & Dependencies
+----------
 
-To run this project, you need a Python environment with the following libraries installed.
+## How It Works
 
--   **pypsa**: The core library for power system analysis.
-    
--   **pandas**: For data manipulation and analysis.
-    
--   **matplotlib**: For plotting the results.
-    
+The model takes your inputs, builds a virtual energy network, and finds the most economically viable way to meet the energy demand.
 
-You can install these dependencies using `pip`:
+1.  **Inputs**: The model requires two main types of inputs:
+    
+    -   **Time-Series Data**: Hourly data for energy demand, renewable generation potential (capacity factors), and grid electricity prices.
+        
+    -   **Economic Parameters**: Technology costs (CAPEX, OPEX), lifetimes, and system-wide constraints like the total investment budget (`CAPEX_BUDGET`).
+        
+2.  **Network Model**: PyPSA constructs a representation of the local energy system, linking all production sources, storage units, and the consumer (load) to a central electrical bus.
+    
+    _A simplified view of the energy network graph:_
+    
+3.  **Optimization**: Using a linear solver, the model determines the optimal size (installed capacity) for each technology to minimize the total annual cost, which includes annualized investment costs, operational costs, and the net cost of grid electricity trading.
+    
+4.  **Outputs**: The result is a complete summary of the optimal system, including installed capacities, total investment, annual costs, and detailed operational plots showing how energy is produced, stored, and consumed at every hour of the year.
+    
+    _Example of an automatically generated energy balance plot:_
+
+_low budget:_
+![image](./images/S1_180k_no_storage.png)
+
+_Optimal_budget:_
+![image](./images/S1_optimal_budget.png)
+
+----------
+
+## Getting Started
+
+### 1. Prerequisites
+
+Make sure you have Python 3.8+ and have installed the required packages. It's recommended to use a virtual environment.
+
+Bash
 
 ```
-pip install pypsa pandas matplotlib
+# Clone the repository
+git clone <repository-url>
+cd <repository-folder>
+
+# Install dependencies
+pip install pypsa pandas numpy matplotlib
 
 ```
 
-You will also need a solver for the optimization. The `HiGHS` solver is a good open-source option that is easy to install:
+### 2. Prepare Your Data
+
+Place your hourly time-series data in the `data/` folder within a specific case study directory. The model expects specific CSV files. For detailed instructions on data formatting and preparation, please see the guides in the `Preprocessing/` directory.
+
+_The required input data structure for the model:_
+
+### 3. Configure the Model
+
+Open `utils/model_param.py` inside your case study folder. This is where you set up your entire scenario without touching the core optimization code. Key parameters include:
+
+-   `CAPEX_BUDGET`: The maximum investment allowed.
+    
+-   `ANNUAL_ENERGY_DEMAND`: The target demand to scale the consumption profile.
+    
+-   `CAPEX_...`, `OPEX_...`, `LIFE_...`: Cost and lifetime assumptions for each technology.
+    
+
+### 4. Run the Simulation
+
+Execute the main script from within its case study directory (`Castanheira de Pera Example/`):
+
+Bash
 
 ```
-pip install highspy
+python optimiser_main.py
 
 ```
 
-## How to Run
+----------
 
-1.  **Ensure** all files are in the correct **directory structure** as outlined above. The `utils` and `data` folders should be in the same directory as `optimiser main.py`.
-    
-2.  **Run the main script** from your terminal:
-    
-    ```
-    python "optimiser main.py"
-    
-    ```
-    
-3.  The script will:
-    
-    -   Load and process the data from the CSV files.
-        
-    -   Build the PyPSA energy network model based on the parameters in `model_param.py`.
-        
-    -   Run the optimization to find the least-cost system configuration.
-        
-    -   Print a detailed summary of the optimal system to the console.
-        
-    -   Generate and display several plots visualizing the results, including energy balance charts and cost breakdowns.
-        
+## Example Use Cases
 
-## Configuration
+This model allows you to quickly answer critical "what-if" questions for a community energy project. And create a idea of what sources to install.
 
-All key parameters of the energy system can be adjusted in the `utils/model_param.py` file. This includes:
+#### **What is the impact of my budget?**
 
--   `CAPEX_BUDGET`: The maximum total investment for new assets.
-    
--   `ANNUAL_ENERGY_DEMAND`: The target annual energy demand to be met.
-    
--   Techno-economic parameters for each technology (e.g., `CAPEX_SOLAR`, `LIFE_WIND`).
-    
--   Hydro reservoir and V2G battery settings.
-    
--   `GRID_INJECTION_LIMIT`: The maximum power that can be sold to the grid.
-    
+By changing the `CAPEX_BUDGET`, you can see how the optimal system adapts. A small budget may only allow for a few solar panels, while a larger one enables a more diverse and resilient system with storage.
 
-By modifying these parameters, you can explore different scenarios and constraints for the energy system.
+#### **What is the value of energy storage?**
+
+You can enable or disable different storage technologies to quantify their economic and operational benefits. The model shows how storage allows the system to capture cheap renewable energy and use it during more expensive peak hours.
+
+_generated plot for hydro storage opreration (with natural rain inflow):_
+![images](./images/S3_full_operation_Pumping.png)
