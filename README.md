@@ -111,7 +111,8 @@ pip install pypsa pandas numpy matplotlib
 
 Place your hourly time-series data in the `data/` folder within a specific case study directory. The model expects specific CSV files. For detailed instructions on data formatting and preparation, please see the guides in the `Preprocessing/` directory.
 
-_The required input data structure for the model:_
+_The required input data structure for the model (replace with zeros if not needed):_
+![images](./images/data_structure.png)
 
 ### 3. Configure the Model
 
