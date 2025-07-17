@@ -9,7 +9,8 @@ The goal is to lower the barrier to entry for energy system modeling, allowing y
 
 ## Project Overview
 
-This project presents a comprehensive modeling and optimization of a hybrid renewable energy system for the community of **Castanheira de Pera, Portugal**. The primary objective is to determine the optimal mix of renewable energy sources—specifically **Solar PV** and **Wind Power**—to complement a pre-existing 30kW hydroelectric turbine. The model aims to meet the local energy demand while minimizing the total cost of the system, considering both capital expenditures (CAPEX) and operational costs.
+### Example project overview
+This project presents a comprehensive modeling and optimization of a hybrid renewable energy system for the community of **Castanheira de Pera, Portugal**. The primary objective is to determine the optimal mix of renewable energy sources—specifically **Solar PV** and **Wind Power**—to complement a pre-existing 30kW hydroelectric turbine. The model aims to meet the local energy demand while minimizing the total cost of the system, considering both capital expenditures (CAPEX) and operational costs (with an enphasing on already existing storage method).
 
 The optimization is performed using the open-source Python library **[PyPSA](https://github.com/PyPSA/PyPSA)**. This tool allows for a detailed, time-series-based simulation of the energy system over a full year (2019) with an hourly resolution. The model also explores the potential of integrating a **Biomass Organic Rankine Cycle (ORC) plant** and leveraging **Vehicle-to-Grid (V2G)** technology from local electric vehicles as a form of battery storage.
 
