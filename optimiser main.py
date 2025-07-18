@@ -2,31 +2,33 @@ import pypsa
 import sys
 import pandas as pd
 from utils.model_ploting import *
-from utils.data_loader import try_import
+from utils.data_loader import load_model_data
 from utils.model_param import *
 
 # =============================================================================
 # --- 1. Data Loading and Preparation ---
 # =============================================================================
 # Load consumption, renewable profiles, and electricity prices
-data, aligned_prices = try_import()
+data = load_model_data()
 
-# Define the annual energy demand in kWh
-data['consumption_mw'] = (data['consumption_kwh'] / 1000)
+# Define the annual energy demand in mWh
+data['consumption_mwh'] = (data['consumption_kwh'] / 1000)
 # autoscale the consumption to the annual demand
-auto_factor = ANNUAL_ENERGY_DEMAND / data['consumption_mw'].sum()
-data['consumption_mw'] = auto_factor * data['consumption_mw']
+auto_factor = ANNUAL_ENERGY_DEMAND / data['consumption_mwh'].sum()
+data['consumption_mwh'] = auto_factor * data['consumption_mwh']
 
 #some debug and Info.
-print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_kwh'].sum()/1000,2))
-print("\nScaled Annual Energy Demand (MWh):", round(data['consumption_mw'].sum(),2))
+print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_mwh'].sum(),2))
+print("Scaled Annual Energy Demand (MWh):", round(data['consumption_mwh'].sum(),2))
 print("Scaling factor applied to consumption (%):", round(auto_factor*100, 2))
 print("\n\n")
 
 print_parameters_summary()
 
-# Convert hydro power from kW to MW for pypsa
-data['hydro_inflow_mw'] = data['hydro_power_kw'] / 1000
+
+# multiply wind power capacity factor (good zone)
+WIND_CAPACITY_FACTOR = 0.97  # moyenne à 30%
+data['wind_capacity_factor'] = WIND_CAPACITY_FACTOR*data['wind_capacity_factor']
 
 # =============================================================================
 # --- 2. PyPSA Network Setup ---
@@ -41,7 +43,7 @@ n.add("Bus", "Castanheira de Pera")
 # Add the load (consumption) to the bus
 n.add("Load", "Consumption",
       bus="Castanheira de Pera",
-      p_set=data['consumption_mw'])
+      p_set=data['consumption_mwh'])
 
 # =============================================================================
 # --- 3. Adding System Components (Generators, Storage, Grid) ---
@@ -74,7 +76,7 @@ n.add("Generator", "Biomass ORC",
       bus="Castanheira de Pera",
       p_nom_extendable=True,
       capital_cost=capital_cost_ORC_Biomass,
-      marginal_cost=- 0 * 4 * 0.55 * aligned_prices) # Negative cost can represent revenue from by-products like heat
+      marginal_cost=- 4 * 0.55 * data["grid_price_eur_per_mwh"]) # Negative cost can represent revenue from by-products like heat
 
 ## ------------------ Storage Units ------------------
 # Hydro Reservoir (modeled as a StorageUnit)
@@ -84,8 +86,8 @@ n.add("StorageUnit", "Hydro Reservoir",
       p_nom_extendable=not IS_HYDRO_FIXED, # Capacity is fixed if IS_HYDRO_FIXED is True
       capital_cost=capital_cost_hydro,
       marginal_cost=0,                # Assumed low operational cost
-      p_min_pu=0,                     # Cannot consume power (no pumping)
-      inflow=data['hydro_inflow_mw'], # Natural recharge from river/rain
+      p_min_pu=-PUMPING_HYDRO,                     # 0 = Cannot consume power (no pumping)
+      inflow=data['hydro_inflow_kwh'] / 1000, # Natural recharge from river/rain
       max_hours=RESERVOIR_CAPACITY_HYDRO, # Reservoir size in hours at full power
       cyclic_state_of_charge=True)    # Ensure reservoir level is same at year end
 
@@ -96,8 +98,6 @@ n.add("StorageUnit", "Electric Car Battery",
       p_nom_extendable=False,         # Not optimized, considered as existing infrastructure
       capital_cost=0,                 # Assumed to be already installed
       marginal_cost=0,                # Negligible operating cost
-      #p_min_pu=-0.5 * power_electric_car, # Can draw up to 50% of max power for charging
-      #p_max_pu=power_electric_car,    # Can inject up to 100% of max power
       max_hours=battery_capacity_electric_car_hours) # Storage capacity in hours at p_nom
 
 
@@ -112,16 +112,16 @@ n.add("Link", "Grid Import",
       bus1="Castanheira de Pera",
       p_nom=1e9,  # Infinite import capacity
       p_min_pu=0,
-      marginal_cost=aligned_prices)  # Purchase price in €/MWh
+      marginal_cost=data['grid_price_eur_per_mwh'])  # Purchase price in €/MWh
 
 # Link for SELLING (Exporting) electricity
 # Flow from "Castanheira de Pera" to "Grid"
 n.add("Link", "Grid Export",
       bus0="Castanheira de Pera",
       bus1="Grid",
-      p_nom=GRID_INJECTION_LIMIT * max(data['consumption_mw']),
+      p_nom=GRID_INJECTION_LIMIT * max(data['consumption_mwh']),
       p_min_pu=0,
-      marginal_cost=-0.9 * aligned_prices) # Negative cost represents revenue
+      marginal_cost=-0.9 * data['grid_price_eur_per_mwh']) # Negative cost represents revenue
 
 # Add a "slack" generator to the grid bus to balance the whole system
 n.add("Generator",
@@ -145,7 +145,6 @@ print(f"Adding the global CAPEX budget constraint: {CAPEX_BUDGET:,.0f} €")
 total_capex_lhs = 0
 
 # 2. Add the investment costs of extendable generators (Solar, Wind, Biomass).
-print("  - Adding variable investment costs (Solar, Wind, Biomass)...")
 gen_p_nom_vars = m.variables['Generator-p_nom']
 total_capex_lhs += gen_p_nom_vars.loc['Wind'] * CAPEX_WIND_MW
 total_capex_lhs += gen_p_nom_vars.loc['Solar'] * CAPEX_SOLAR_MW
@@ -164,7 +163,6 @@ else:
     total_capex_lhs += fixed_hydro_cost
 
 # 4. Add the final global budget constraint to the model.
-print("Finalizing and adding the global budget constraint to the model.")
 m.add_constraints(total_capex_lhs, "<=", CAPEX_BUDGET, name="Global_CAPEX_budget_limit")
 
 # =============================================================================
@@ -189,13 +187,14 @@ else:
 
 
     # Plot for a week in Winter
-    start_date_winter = pd.Timestamp('2019-01-01')
-    end_date_winter = pd.Timestamp('2019-01-14')
+    start_date_winter = pd.Timestamp('2019-03-11')
+    end_date_winter = pd.Timestamp('2019-03-23')
     plot_energy_balance(n, start_date_winter, end_date_winter, plot_market_price=False)
-    plot_storage_operation(n, "Hydro Reservoir", start_date_winter, end_date_winter)
-    plot_storage_operation(n, "Electric Car Battery", start_date_winter, end_date_winter)
+    #plot_storage_operation(n, "Hydro Reservoir", start_date_winter, end_date_winter)
+    #plot_storage_operation(n, "Electric Car Battery", start_date_winter, end_date_winter)
 
     # Plot for a week in Summer
     start_date_summer = pd.Timestamp('2019-06-01')
     end_date_summer = pd.Timestamp('2019-06-14')
-    plot_energy_balance(n, start_date_summer, end_date_summer, plot_market_price=False)
+    #plot_energy_balance(n, start_date_summer, end_date_summer, plot_market_price=False)
+    #plot_storage_operation(n, "Hydro Reservoir", start_date_summer, end_date_summer)
