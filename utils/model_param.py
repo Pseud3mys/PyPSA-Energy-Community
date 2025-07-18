@@ -6,11 +6,13 @@ import pandas as pd
 
 # --- General System Configuration ---
 # Maximum total investment budget for all new assets (Solar, Wind, Biomass, Hydro).
-CAPEX_BUDGET = 250000  # Budget in Euros (€)
+CAPEX_BUDGET = 1e9  # Budget in Euros (€)
+# 1e9 means we look for the optimal budget. Put lower if you want to limit the initial investment.
 
 # Target annual energy demand for the system. This is used to scale the consumption profile.
-ANNUAL_ENERGY_DEMAND = 200  # MWh/year
-# Castanheira de Pera's annual energy demand is around 8700 MWh.
+ANNUAL_ENERGY_DEMAND = 0.1*8645  # MWh/year
+# We work on 10% of the demand in this exemple (equivalent to 271 citizens of the 2 710).
+# Castanheira de Pera's annual energy demand is around 8645 MWh.
 
 # --- Solar Power Configuration ---
 CAPEX_SOLAR_MW = 1100 * 1e3      # Investment cost per MWp (€/MWp) | Source: 1100 €/kW
@@ -24,6 +26,15 @@ LIFE_WIND = 25                # Economic lifetime in years
 OPEX_WIND_MW_YEAR = 34 * 1e3          # Annual operational cost in euros/MW/year | Source: 34 €/kW/an
 capital_cost_wind = CAPEX_WIND_MW / LIFE_WIND + OPEX_WIND_MW_YEAR # Annualized capital cost (€/MWp/year)
 
+# --- Biomass ORC (Organic Rankine Cycle) Configuration ---
+CAPEX_BIOMASS_MW = 18000 * 1e3 # investment cost per MW (€/MW) | Source: 18000 €/kW
+OPEX_BIOMASS_MW_YEAR = 600 * 1e3        # Annual operational cost in euros/MW/year | Source: 600 €/kW/an
+LIFE_ORC_Biomass = 25           # Economic lifetime in years
+# produce 4 time more heat than electricity...
+# Annualized cost includes both capital cost and operational (salary) costs.
+capital_cost_ORC_Biomass = (CAPEX_BIOMASS_MW / LIFE_ORC_Biomass) + OPEX_BIOMASS_MW_YEAR
+
+
 # --- Hydro Reservoir Configuration ---
 # This section defines a pre-existing, fixed-capacity hydro plant.
 IS_HYDRO_FIXED = True             # If True, the hydro plant's capacity is not optimized.
@@ -34,14 +45,6 @@ LIFE_HYDRO = 50                   # Economic lifetime in years
 OPEX_HYDRO_MW_YEAR = 70 * 1e3             # Annual operational cost in euros/MW/year | Source: 70 €/kW/an
 RESERVOIR_CAPACITY_HYDRO = 5      # Reservoir storage capacity in hours of full power operation
 capital_cost_hydro = CAPEX_HYDRO_MW / LIFE_HYDRO + OPEX_HYDRO_MW_YEAR # Annualized capital cost (€/MW/year)
-
-# --- Biomass ORC (Organic Rankine Cycle) Configuration ---
-CAPEX_BIOMASS_MW = 18000 * 1e3 # investment cost per MW (€/MW) | Source: 18000 €/kW
-OPEX_BIOMASS_MW_YEAR = 600 * 1e3        # Annual operational cost in euros/MW/year | Source: 600 €/kW/an
-LIFE_ORC_Biomass = 25           # Economic lifetime in years
-# produce 4 time more heat than electricity...
-# Annualized cost includes both capital cost and operational (salary) costs.
-capital_cost_ORC_Biomass = (CAPEX_BIOMASS_MW / LIFE_ORC_Biomass) + OPEX_BIOMASS_MW_YEAR
 
 
 # --- Electric Car (V2G - Vehicle-to-Grid) Configuration ---
