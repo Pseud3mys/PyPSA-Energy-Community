@@ -1,5 +1,5 @@
 
-# Simplified PyPSA Energy System Optimization Model
+# Easy to use PyPSA energy community optimization model
 
 Welcome! This repository provides a straightforward and accessible framework for designing and analyzing local hybrid energy systems. Built on the powerful **PyPSA (Python for Power System Analysis)** library, this model is intended as a simple entry point for students, researchers, and communities to size energy sources and understand how system design evolves with different constraints.
 
