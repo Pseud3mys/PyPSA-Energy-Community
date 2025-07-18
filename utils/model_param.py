@@ -9,31 +9,30 @@ import pandas as pd
 CAPEX_BUDGET = 250000  # Budget in Euros (€)
 
 # Target annual energy demand for the system. This is used to scale the consumption profile.
-ANNUAL_ENERGY_DEMAND = 500  # MWh/year
+ANNUAL_ENERGY_DEMAND = 200  # MWh/year
 # Castanheira de Pera's annual energy demand is around 8700 MWh.
 
 # --- Solar Power Configuration ---
 CAPEX_SOLAR_MW = 1100 * 1e3      # Investment cost per MWp (€/MWp) | Source: 1100 €/kW
 LIFE_SOLAR = 30               # Economic lifetime in years
 OPEX_SOLAR_MW_YEAR = 8 * 1e3          # Annual operational cost in euros/MW/year | Source: 8 €/kW/an
-#
 capital_cost_solar = CAPEX_SOLAR_MW / LIFE_SOLAR + OPEX_SOLAR_MW_YEAR  # Annualized capital cost (€/MWp/year)
 
 # --- Wind Power Configuration ---
 CAPEX_WIND_MW = 1300 * 1e3       # Investment cost per MWp (€/MWp) | Source: 1300 €/kW
 LIFE_WIND = 25                # Economic lifetime in years
 OPEX_WIND_MW_YEAR = 34 * 1e3          # Annual operational cost in euros/MW/year | Source: 34 €/kW/an
-#
 capital_cost_wind = CAPEX_WIND_MW / LIFE_WIND + OPEX_WIND_MW_YEAR # Annualized capital cost (€/MWp/year)
 
 # --- Hydro Reservoir Configuration ---
 # This section defines a pre-existing, fixed-capacity hydro plant.
 IS_HYDRO_FIXED = True             # If True, the hydro plant's capacity is not optimized.
+PUMPING_HYDRO = 1            # Pumping 1 to activate, 0 to deactivate pumping.
+#
 CAPEX_HYDRO_MW = 3800 * 1e3       # Investment cost per MWp (€/MWp) | Source: 3800 €/kW
 LIFE_HYDRO = 50                   # Economic lifetime in years
 OPEX_HYDRO_MW_YEAR = 70 * 1e3             # Annual operational cost in euros/MW/year | Source: 70 €/kW/an
 RESERVOIR_CAPACITY_HYDRO = 5      # Reservoir storage capacity in hours of full power operation
-#
 capital_cost_hydro = CAPEX_HYDRO_MW / LIFE_HYDRO + OPEX_HYDRO_MW_YEAR # Annualized capital cost (€/MW/year)
 
 # --- Biomass ORC (Organic Rankine Cycle) Configuration ---
@@ -58,10 +57,11 @@ battery_capacity_electric_car_hours = (number_of_chargers * mean_electric_car_ca
 
 # --- Grid Interaction Configuration ---
 # Sets the maximum power that can be sold back to the grid.
-GRID_INJECTION_LIMIT = 1.0       # As a percentage (%) of the system's maximum demand
+GRID_INJECTION_LIMIT = 1       # As a percentage (%) of the system's maximum demand
 
 # =============================================================================
 # --- Function to Summarize Optimization Results ---
+# no need to modify
 # =============================================================================
 def print_parameters_summary():
     # --- Structuring data for display ---
