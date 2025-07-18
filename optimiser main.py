@@ -18,7 +18,7 @@ auto_factor = ANNUAL_ENERGY_DEMAND / data['consumption_mwh'].sum()
 data['consumption_mwh'] = auto_factor * data['consumption_mwh']
 
 #some debug and Info.
-print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_mwh'].sum(),2))
+print("\n\nAnnual Energy Demand in Castanheira de Pera (MWh):", round(data['consumption_kwh'].sum()/1000,2))
 print("Scaled Annual Energy Demand (MWh):", round(data['consumption_mwh'].sum(),2))
 print("Scaling factor applied to consumption (%):", round(auto_factor*100, 2))
 print("\n\n")
